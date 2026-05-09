@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='ZeeResizer.ico') }}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FairPay — Smart Price Detection</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --white: #ffffff;
+    --off-white: #faf9f7;
+    --surface: #f4f2ee;
+    --border: rgba(0,0,0,0.08);
+    --border-med: rgba(0,0,0,0.14);
+    --ink: #1a1916;
+    --ink-muted: #6b6860;
+    --ink-faint: #a8a59e;
+    --accent: #2d6a4f;
+    --accent-light: #d8f3dc;
+    --accent-mid: #52b788;
+    --danger: #c1121f;
+    --danger-light: #ffccd5;
+    --amber: #b5640a;
+    --amber-light: #fde68a;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+    --radius-xl: 32px;
+  }
+  .footer {
+  margin-top: 20px;
+  padding: 40px 20px;
+  border-top: 1px solid var(--border);
+  background: transparent;
+}
+.footer-box {
+  text-align: center;
+  padding: 30px 20px;
+
+  /* REMOVE card look */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.footer-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 18px;
+}
+
+.social-icons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.social-icons a {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: 16px;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+/* Hover glow effect */
+.social-icons a:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(45,106,79,0.25);
+}
+
+.footer-tag {
+  font-size: 12px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Background pattern ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(82,183,136,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(45,106,79,0.05) 0%, transparent 50%),
+      radial-gradient(circle at 60% 10%, rgba(181,100,10,0.04) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(250,249,247,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-mid);
+    display: inline-block;
+    animation: pulse-dot 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
+
+  .nav-tag {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+    text-align: center;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  .hero-eyebrow::before, .hero-eyebrow::after {
+    content: '';
+    display: block;
+    width: 28px;
+    height: 1px;
+    background: var(--accent-mid);
+    opacity: 0.5;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(42px, 7vw, 72px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--ink-muted);
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 auto 48px;
+    font-weight: 300;
+  }
+
+  /* ─── UPLOAD CARD ─── */
+  .upload-section {
+    position: relative;
+    z-index: 1;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+    animation: fadeUp 0.7s 0.15s ease both;
+  }
+
+  .upload-card {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  .upload-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    padding: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .tab-btn.active {
+    color: var(--ink);
+    background: var(--off-white);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-mid);
+  }
+
+  .tab-icon {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .tab-content { display: none; padding: 32px; }
+  .tab-content.active { display: block; }
+
+  /* ─── DROP ZONE ─── */
+  .drop-zone {
+    border: 2px dashed var(--border-med);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent-mid);
+    background: var(--accent-light);
+  }
+
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .drop-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 16px;
+    background: var(--surface);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s;
+  }
+
+  .drop-zone:hover .drop-icon {
+    transform: translateY(-4px);
+  }
+
+  .drop-icon svg { width: 28px; height: 28px; stroke: var(--accent); }
+
+  .drop-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .drop-sub {
+    font-size: 13px;
+    color: var(--ink-faint);
+  }
+
+  .file-preview {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: var(--accent-light);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-top: 16px;
+  }
+
+  .file-preview.visible { display: flex; }
+
+  .file-preview-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ─── CAMERA TAB ─── */
+  #camera-preview {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .camera-controls {
+    display: flex;
+    gap: 12px;
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-primary:hover {
+    background: #245c42;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(45,106,79,0.25);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    flex: 1;
+    padding: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { background: var(--border); }
+
+  .btn-capture {
+    flex: 2;
+    padding: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-capture:hover { background: #245c42; }
+
+  /* ─── LOADING OVERLAY ─── */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(250,249,247,0.9);
+    backdrop-filter: blur(8px);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .loading-overlay.active { display: flex; }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent-mid);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--ink);
+  }
+
+  .loading-sub {
+    font-size: 14px;
+    color: var(--ink-muted);
+  }
+
+  /* ─── FEATURE PILLS ─── */
+  .features {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 0 40px 32px;
+    animation: fadeUp 0.7s 0.3s ease both;
+  }
+
+  .feature-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+  }
+
+  .feature-pill:hover {
+    border-color: var(--accent-mid);
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .pill-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-mid);
+    flex-shrink: 0;
+  }
+
+  canvas { display: none; }
+
+  @media (max-width: 600px) {
+    nav { padding: 0 20px; }
+    .hero, .upload-section, .features { padding-left: 20px; padding-right: 20px; }
+    h1 { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <span class="logo-dot"></span>
+    FairPay
+  </div>
+  <span class="nav-tag">OCR + AI Pricing</span>
+</nav>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Scanning your bill…</div>
+  <div class="loading-sub">OCR is reading the text — this takes a moment</div>
+</div>
+
+<section class="hero">
+  <div class="hero-eyebrow">Smart Bill Analysis</div>
+  <h1>Know if you're paying a <em>fair</em> price</h1>
+  <p class="hero-sub">Upload a photo of any bill or receipt. We'll scan it with OCR, match your products, and tell you instantly if you're overpaying.</p>
+</section>
+
+<div class="upload-section">
+  <div class="upload-card">
+    <div class="upload-tabs">
+      <button class="tab-btn active" onclick="switchTab('upload', this)">
+        <span class="tab-icon">📂</span>
+        Upload File
+      </button>
+      <button class="tab-btn" onclick="switchTab('camera', this)">
+        <span class="tab-icon">📷</span>
+        Use Camera
+      </button>
+    </div>
+
+    <!-- Upload Tab -->
+    <div class="tab-content active" id="tab-upload">
+      <form method="POST" action="/upload" enctype="multipart/form-data" id="uploadForm">
+        <div class="drop-zone" id="dropZone">
+          <input type="file" name="image" accept="image/*" id="fileInput" onchange="previewFile(this)">
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+              <polyline points="8 12 12 8 16 12"/>
+              <line x1="12" y1="8" x2="12" y2="20"/>
+            </svg>
+          </div>
+          <p class="drop-text">Drop your bill here</p>
+          <p class="drop-sub">JPG, PNG, WEBP — up to 10 MB</p>
+        </div>
+
+        <div class="file-preview" id="filePreview">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span class="file-preview-name" id="fileName">—</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+
+        <button type="submit" class="btn-primary" onclick="showLoading()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          Scan Bill
+        </button>
+      </form>
+    </div>
+
+    <!-- Camera Tab -->
+    <div class="tab-content" id="tab-camera">
+      <video id="camera-preview" autoplay playsinline muted></video>
+      <canvas id="canvas"></canvas>
+      <div class="camera-controls">
+        <button class="btn-secondary" onclick="stopCamera()">✕ Cancel</button>
+        <button class="btn-capture" onclick="capturePhoto()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+          </svg>
+          Capture & Scan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="features">
+  <div class="feature-pill"><span class="pill-dot"></span>EasyOCR powered</div>
+  <div class="feature-pill"><span class="pill-dot"></span>Fuzzy product matching</div>
+  <div class="feature-pill"><span class="pill-dot"></span>Live market prices</div>
+  <div class="feature-pill"><span class="pill-dot"></span>Overpriced detection</div>
+  <div class="feature-pill"><span class="pill-dot"></span>Save bill history</div>
+</div>
+<footer class="footer">
+  <div class="footer-box">
+    <p class="footer-name">Developed by Darshil Sharma</p>
+
+    <div class="social-icons">
+      <a href="https://x.com/darshilsha73654" target="_blank">
+        <i class="fab fa-twitter"></i>
+      </a>
+      <a href="https://www.linkedin.com/in/darshil-sharma-9b49b639a/" target="_blank">
+        <i class="fab fa-linkedin-in"></i>
+      </a>
+      <a href="https://dev-portfolio-ixm0.onrender.com/" target="_blank">
+        <i class="fas fa-globe"></i>
+      </a>
+      <a href="https://dev-portfolio2-1.onrender.com" target="_blank">
+        <i class="fas fa-briefcase"></i>
+      </a>
+      <a href="https://github.com/DarshiL-Sharma" target="_blank">
+        <i class="fab fa-github"></i>
+      </a>
+    </div>
+
+    <p class="footer-tag">Built with ❤️ • FairPay</p>
+  </div>
+</footer>
+<script>
+  let cameraStream = null;
+
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'camera') startCamera();
+    else stopCamera();
+  }
+
+  function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(stream => {
+        cameraStream = stream;
+        document.getElementById('camera-preview').srcObject = stream;
+      })
+      .catch(err => alert('Camera access denied: ' + err.message));
+  }
+
+  function stopCamera() {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+      cameraStream = null;
+    }
+  }
+
+  function capturePhoto() {
+    const video = document.getElementById('camera-preview');
+    const canvas = document.getElementById('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+      showLoading();
+      const fd = new FormData();
+      fd.append('image', blob, 'capture.jpg');
+      fetch('/upload', { method: 'POST', body: fd })
+        .then(r => r.text())
+        .then(html => { document.open(); document.write(html); document.close(); })
+        .catch(() => hideLoading());
+    }, 'image/jpeg', 0.92);
+  }
+
+  function previewFile(input) {
+    if (input.files && input.files[0]) {
+      document.getElementById('fileName').textContent = input.files[0].name;
+      document.getElementById('filePreview').classList.add('visible');
+    }
+  }
+
+  function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+  }
+
+  function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+  }
+
+  // Drag & Drop
+  const dz = document.getElementById('dropZone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      document.getElementById('fileInput').files = e.dataTransfer.files;
+      previewFile(document.getElementById('fileInput'));
+    }
+  });
+</script>
+</body>
+</html>

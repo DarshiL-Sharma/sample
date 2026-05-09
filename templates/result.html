@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='ZeeResizer.ico') }}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result — FairPay</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --white: #ffffff;
+    --off-white: #faf9f7;
+    --surface: #f4f2ee;
+    --border: rgba(0,0,0,0.08);
+    --border-med: rgba(0,0,0,0.14);
+    --ink: #1a1916;
+    --ink-muted: #6b6860;
+    --ink-faint: #a8a59e;
+
+    /* verdict colours */
+    --fair-bg: #d8f3dc; --fair-text: #2d6a4f; --fair-border: rgba(45,106,79,0.2);
+    --over-bg: #ffccd5; --over-text: #c1121f; --over-border: rgba(193,18,31,0.2);
+    --under-bg: #caf0f8; --under-text: #0077b6; --under-border: rgba(0,119,182,0.2);
+    --none-bg: #f4f2ee;  --none-text: #6b6860; --none-border: rgba(0,0,0,0.1);
+
+    --accent: #2d6a4f; --accent-light: #d8f3dc; --accent-mid: #52b788;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.1);
+    --radius-sm: 8px; --radius-md: 14px; --radius-lg: 22px; --radius-xl: 32px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 70%, rgba(82,183,136,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 85% 15%, rgba(45,106,79,0.04) 0%, transparent 40%);
+    pointer-events: none; z-index: 0;
+  }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    padding: 0 40px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(250,249,247,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px; color: var(--ink);
+    display: flex; align-items: center; gap: 8px;
+    text-decoration: none;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent-mid);
+    animation: pulse-dot 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
+
+  .nav-step {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-muted);
+  }
+
+  .step-badge {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+  }
+
+  .step-badge.done { background: var(--accent-light); color: var(--accent); }
+  .step-badge.active { background: var(--accent); color: white; }
+  .step-line { width: 24px; height: 1px; background: var(--border-med); }
+
+  /* ─── PAGE ─── */
+  .page-wrap {
+    position: relative; z-index: 1;
+    max-width: 660px; margin: 0 auto;
+    padding: 48px 40px 80px;
+  }
+
+  /* ─── VERDICT HERO ─── */
+  .verdict-hero {
+    text-align: center;
+    padding: 52px 32px 48px;
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .verdict-bg-blob {
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.4;
+    filter: blur(60px);
+    pointer-events: none;
+  }
+
+  .verdict-icon-wrap {
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 36px;
+    animation: iconBounce 0.7s 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  @keyframes iconBounce {
+    from { opacity: 0; transform: scale(0.4); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .verdict-label {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0; animation: fadeIn 0.4s 0.5s ease forwards;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .verdict-word {
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px; line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    opacity: 0; animation: fadeIn 0.4s 0.55s ease forwards;
+  }
+
+  .verdict-detail {
+    font-size: 16px; line-height: 1.6;
+    opacity: 0; animation: fadeIn 0.4s 0.65s ease forwards;
+  }
+
+  /* ─── PRICE COMPARISON ─── */
+  .price-row {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center; gap: 12px;
+    margin-top: 32px; padding-top: 28px;
+    border-top: 1px solid var(--border);
+    opacity: 0; animation: fadeIn 0.5s 0.75s ease forwards;
+  }
+
+  .price-box {
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    text-align: center;
+  }
+
+  .price-box-label {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .price-box-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px; letter-spacing: -0.01em;
+  }
+
+  .price-box.bill { background: var(--surface); }
+  .price-box.bill .price-box-label { color: var(--ink-muted); }
+  .price-box.bill .price-box-value { color: var(--ink); }
+
+  .price-vs {
+    font-size: 13px; color: var(--ink-faint); font-weight: 500;
+  }
+
+  /* ─── CHART SECTION ─── */
+  .chart-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    padding: 28px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; color: var(--ink);
+  }
+
+  .card-sub {
+    font-size: 13px; color: var(--ink-faint);
+  }
+
+  .chart-wrap {
+    position: relative; height: 200px;
+  }
+
+  /* ─── BILL DETAILS ─── */
+  .details-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    margin-bottom: 20px;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .details-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+  }
+
+  .details-table {
+    width: 100%; border-collapse: collapse;
+  }
+
+  .details-table tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .details-table tr:last-child { border-bottom: none; }
+  .details-table tr:hover { background: var(--off-white); }
+
+  .details-table td {
+    padding: 14px 24px;
+    font-size: 14px;
+  }
+
+  .details-table .dt-label {
+    color: var(--ink-muted); width: 40%; font-weight: 500;
+  }
+
+  .details-table .dt-value {
+    color: var(--ink); font-weight: 400;
+  }
+
+  /* ─── MATCH SCORE ─── */
+  .score-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .score-bar-wrap {
+    flex: 1; height: 6px;
+    background: var(--surface); border-radius: 3px; overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%; border-radius: 3px;
+    background: var(--accent-mid);
+    transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+    width: 0;
+  }
+
+  .score-num {
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    min-width: 36px; text-align: right;
+  }
+
+  /* ─── FOOTER ACTIONS ─── */
+  .actions {
+    display: flex; gap: 12px;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+
+  .btn-primary {
+    flex: 1; padding: 15px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
+    color: var(--white); background: var(--accent);
+    border: none; border-radius: var(--radius-md);
+    cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover {
+    background: #245c42; transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(45,106,79,0.25);
+  }
+
+  .btn-secondary {
+    padding: 15px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 500;
+    color: var(--ink); background: var(--white);
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-md);
+    cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: rgba(0,0,0,0.25); }
+
+  /* ─── CONFETTI ─── */
+  .confetti-container {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 999;
+    overflow: hidden;
+  }
+
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  .cf {
+    position: absolute; top: -10px;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 0 20px; }
+    .page-wrap { padding: 32px 20px 60px; }
+    .verdict-word { font-size: 40px; }
+    .price-box-value { font-size: 22px; }
+    .actions { flex-direction: column; }
+  }
+    .footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ink-faint);
+  background: transparent;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
+.footer p {
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+    .footer {
+  text-align: center;
+  padding: 30px 20px;
+  font-size: 14px;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--border);
+  margin-top: 60px;
+}
+
+.footer-name {
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: var(--ink-faint);
+  font-size: 13px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.footer-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 0%;
+  height: 1px;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.footer-links a:hover {
+  color: var(--accent);
+}
+
+.footer-links a:hover::after {
+  width: 100%;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <span class="logo-dot"></span>FairPay
+  </a>
+  <div class="nav-step">
+    <div class="step-badge done">✓</div>
+    <span>Scan</span>
+    <div class="step-line"></div>
+    <div class="step-badge done">✓</div>
+    <span>Review</span>
+    <div class="step-line"></div>
+    <div class="step-badge active">✓</div>
+    <span>Result</span>
+  </div>
+</nav>
+
+<div class="confetti-container" id="confettiBox"></div>
+
+<div class="page-wrap">
+
+  <!-- ─── VERDICT HERO ─── -->
+  {% set v = verdict | default('Unknown') %}
+  <div class="verdict-hero">
+
+    {% if v == 'Fair' %}
+      <div class="verdict-bg-blob" style="background: #52b788;"></div>
+      <div class="verdict-icon-wrap" style="background:#d8f3dc;">🎯</div>
+      <div class="verdict-label" style="color:#2d6a4f;">Verdict</div>
+      <div class="verdict-word" style="color:#2d6a4f;">Fair Price</div>
+      <div class="verdict-detail" style="color:#52b788;">
+        You paid a fair market rate. The price is within <strong>10%</strong> of the market average.
+      </div>
+
+    {% elif v == 'Overpriced' %}
+      <div class="verdict-bg-blob" style="background: #e5383b;"></div>
+      <div class="verdict-icon-wrap" style="background:#ffccd5;">⚠️</div>
+      <div class="verdict-label" style="color:#c1121f;">Verdict</div>
+      <div class="verdict-word" style="color:#c1121f;">Overpriced</div>
+      <div class="verdict-detail" style="color:#c1121f;">
+        You paid <strong>more than 10% above</strong> the market rate. Consider comparing shops next time.
+      </div>
+
+    {% elif v == 'Underpriced' %}
+      <div class="verdict-bg-blob" style="background: #0096c7;"></div>
+      <div class="verdict-icon-wrap" style="background:#caf0f8;">🎉</div>
+      <div class="verdict-label" style="color:#0077b6;">Verdict</div>
+      <div class="verdict-word" style="color:#0077b6;">Great Deal!</div>
+      <div class="verdict-detail" style="color:#0077b6;">
+        You got it <strong>below market price</strong> — well done! You saved money on this item.
+      </div>
+
+    {% else %}
+      <div class="verdict-bg-blob" style="background: #adb5bd;"></div>
+      <div class="verdict-icon-wrap" style="background:#f4f2ee;">🔍</div>
+      <div class="verdict-label" style="color:#6b6860;">Verdict</div>
+      <div class="verdict-word" style="color:#6b6860;">No Match</div>
+      <div class="verdict-detail" style="color:#a8a59e;">
+        No market data found for this product. Try a shorter or more general product name.
+      </div>
+    {% endif %}
+
+    {% if data.amount and market_price %}
+    <div class="price-row">
+      <div class="price-box bill">
+        <div class="price-box-label">Bill Price</div>
+        <div class="price-box-value">₹{{ data.amount }}</div>
+      </div>
+      <div class="price-vs">vs</div>
+      <div class="price-box"
+        style="background:
+          {% if v == 'Fair' %}var(--fair-bg)
+          {% elif v == 'Overpriced' %}var(--over-bg)
+          {% elif v == 'Underpriced' %}var(--under-bg)
+          {% else %}var(--surface){% endif %};">
+        <div class="price-box-label"
+          style="color:
+            {% if v == 'Fair' %}var(--fair-text)
+            {% elif v == 'Overpriced' %}var(--over-text)
+            {% elif v == 'Underpriced' %}var(--under-text)
+            {% else %}var(--ink-muted){% endif %};">
+          Market Price
+        </div>
+        <div class="price-box-value"
+          style="color:
+            {% if v == 'Fair' %}var(--fair-text)
+            {% elif v == 'Overpriced' %}var(--over-text)
+            {% elif v == 'Underpriced' %}var(--under-text)
+            {% else %}var(--ink){% endif %};">
+          ₹{{ market_price }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ─── CHART ─── -->
+  {% if data.amount and market_price %}
+  <div class="chart-card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Price Comparison</div>
+        <div class="card-sub">Bill price vs market benchmark</div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ─── DETAILS ─── -->
+  <div class="details-card">
+    <div class="details-header">Bill Details</div>
+    <table class="details-table">
+      <tr>
+        <td class="dt-label">Product</td>
+        <td class="dt-value">{{ data.product_name or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="dt-label">Vendor</td>
+        <td class="dt-value">{{ data.vendor or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="dt-label">Date</td>
+        <td class="dt-value">{{ data.date or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="dt-label">Invoice No.</td>
+        <td class="dt-value">{{ data.invoice_no or '—' }}</td>
+      </tr>
+      {% if data.subtotal %}
+      <tr>
+        <td class="dt-label">Subtotal</td>
+        <td class="dt-value">₹{{ data.subtotal }}</td>
+      </tr>
+      {% endif %}
+      {% if data.total %}
+      <tr>
+        <td class="dt-label">Total</td>
+        <td class="dt-value">₹{{ data.total }}</td>
+      </tr>
+      {% endif %}
+      {% if db_product %}
+      <tr>
+        <td class="dt-label">Matched Product</td>
+        <td class="dt-value">{{ db_product }}</td>
+      </tr>
+      {% endif %}
+      {% if score is defined %}
+      <tr>
+        <td class="dt-label">Match Confidence</td>
+        <td class="dt-value">
+          <div class="score-row">
+            <div class="score-bar-wrap">
+              <div class="score-bar" id="scoreBar" data-score="{{ score }}"></div>
+            </div>
+            <span class="score-num">{{ score }}%</span>
+          </div>
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+  <!-- ─── ACTIONS ─── -->
+  <div class="actions">
+    <a href="/" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12l7-7 7 7"/>
+      </svg>
+      Scan Another Bill
+    </a>
+    <a href="/history" class="btn-secondary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/>
+      </svg>
+      View History
+    </a>
+  </div>
+<footer class="footer">
+  <p>Developer – Darshil Sharma</p>
+</footer>
+</div>
+
+<script>
+  // ─── SCORE BAR
+  window.addEventListener('load', () => {
+    const bar = document.getElementById('scoreBar');
+    if (bar) {
+      const score = parseInt(bar.dataset.score) || 0;
+      setTimeout(() => { bar.style.width = score + '%'; }, 300);
+    }
+  });
+
+  // ─── CHART
+  const billAmount   = parseFloat("{{ data.amount or 0 }}") || 0;
+  const marketPrice  = parseFloat("{{ market_price or 0 }}") || 0;
+  const verdict      = "{{ verdict | default('Unknown') }}";
+
+  if (billAmount && marketPrice && document.getElementById('priceChart')) {
+    const diff = billAmount - marketPrice;
+    const pct  = marketPrice ? ((diff / marketPrice) * 100).toFixed(1) : 0;
+
+    const verdictColors = {
+      'Fair':        { bill: '#52b788', market: '#d8f3dc', billBorder: '#2d6a4f' },
+      'Overpriced':  { bill: '#e5383b', market: '#d8f3dc', billBorder: '#c1121f' },
+      'Underpriced': { bill: '#0096c7', market: '#d8f3dc', billBorder: '#0077b6' },
+    };
+
+    const colors = verdictColors[verdict] || { bill: '#888', market: '#d8f3dc', billBorder: '#555' };
+
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Your Bill', 'Market Price'],
+        datasets: [{
+          data: [billAmount, marketPrice],
+          backgroundColor: [colors.bill + 'cc', '#52b78844'],
+          borderColor:     [colors.bill, '#52b788'],
+          borderWidth: 2,
+          borderRadius: 10,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ₹' + ctx.raw.toFixed(2)
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              font: { family: 'DM Sans', size: 13, weight: '500' },
+              color: '#6b6860'
+            },
+            border: { display: false }
+          },
+          y: {
+            beginAtZero: false,
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: {
+              font: { family: 'DM Sans', size: 12 },
+              color: '#a8a59e',
+              callback: v => '₹' + v
+            },
+            border: { display: false }
+          }
+        },
+        animation: {
+          duration: 900,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  // ─── CONFETTI for "Underpriced" / "Fair"
+  function launchConfetti() {
+    const colors = ['#52b788','#2d6a4f','#ffd166','#06d6a0','#118ab2'];
+    const container = document.getElementById('confettiBox');
+    for (let i = 0; i < 60; i++) {
+      const cf = document.createElement('div');
+      cf.className = 'cf';
+      const size = Math.random() * 8 + 5;
+      cf.style.cssText = `
+        left: ${Math.random() * 100}vw;
+        width: ${size}px; height: ${size}px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+        animation-duration: ${Math.random() * 2.5 + 1.5}s;
+        animation-delay: ${Math.random() * 0.8}s;
+      `;
+      container.appendChild(cf);
+      cf.addEventListener('animationend', () => cf.remove());
+    }
+  }
+
+  if (verdict === 'Fair' || verdict === 'Underpriced') {
+    setTimeout(launchConfetti, 600);
+  }
+</script>
+</body>
+</html>
